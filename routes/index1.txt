@@ -1,0 +1,107 @@
+var express = require('express');
+var router = express.Router();
+const { Connection, Request } = require("tedious");
+
+var a=[]
+var b=[]
+var c=[]
+var d=[]
+
+// Create connection to database
+const config = {
+  authentication: {
+    options: {
+      userName: "nithish", 
+      password: "Nithi@123" 
+    },
+    type: "default"
+  },
+  server: "nithish-sql-server.database.windows.net", 
+  options: {
+    database: "nithish-sql",
+    encrypt: true
+  }
+};
+
+const connection = new Connection(config);
+
+// Attempt to connect and execute queries if connection goes through
+connection.on("connect", err => {
+  if (err) {
+    console.error(err.message);
+  } else {
+    orders()
+
+  }
+});
+
+connection.connect(function(err) {
+    if (err) throw err;
+    else{
+        console.log("Azure MySQL Conneted.")
+    }
+});
+function orders() {
+  console.log("Reading rows from the Table...");
+ 
+
+  // Read all rows from table
+  const request = new Request(
+    `select * from orders`,
+    (err, rowCount) => {
+      if (err) {
+        console.error(err.message);
+      } else {
+       // console.log(`${rowCount} row(s) returned`);
+      }
+    }
+  );
+  request.on("row", columnso => {
+  //  console.log(columns)
+    columnso.forEach(column => {
+      //console.log("%s\t%s", column.metadata.colName, column.value);
+      a.push(column.metadata.colName,column.value)
+    });
+    b.push(a)
+    a=[]
+ 
+  })
+  connection.execSql(request);
+}
+
+/* GET home page. */
+router.get('/', function(req, res, next) {
+  res.render('index', { title: 'Express' });
+});
+
+
+router.get('/customer',function(req,res){
+  //console.log(b)
+  const request1 = new Request(
+    `select * from customer`,
+    (err, rowCount) => {
+      if (err) {
+        console.error(err.message);
+      } else {
+        console.log(`${rowCount} row(s) returned`);
+      }
+    }
+  );
+ 
+  request1.on("row", columnsc => {
+    //console.log(columns)
+    columnsc.forEach(column => {
+     //console.log("%s\t%s", column.metadata.colName, column.value);
+      c.push(column.metadata.colName,column.value)
+    });
+    d.push(c)
+    c=[]
+    res.send(columnsc)
+  })
+
+  // get data
+   // Read all rows from table
+   connection.execSql(request1);
+});
+
+module.exports = router;
